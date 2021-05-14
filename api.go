@@ -3,8 +3,11 @@ package tbot
 import (
 	"encoding/json"
 	"fmt"
+	"io"
+	"mime/multipart"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"time"
 )
@@ -52,6 +55,84 @@ func (c *Client) sendRequest(method string, request url.Values, response interfa
 	}
 
 	resp, err = netClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	// resp.StatusCode is between 200 and 300.
+	// This is because an HTTP status code with the form 2XX signifies a successful HTTP POST request
+	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
+		var apiResp apiResponse
+		err = json.NewDecoder(resp.Body).Decode(&apiResp)
+		if err != nil {
+			return fmt.Errorf("unable to decode response: %v", err)
+		}
+		err = resp.Body.Close()
+		if err != nil {
+			return fmt.Errorf("unable to close response body: %v", err)
+		}
+
+		if !apiResp.OK {
+			return fmt.Errorf(apiResp.Description)
+		}
+
+		return json.Unmarshal(apiResp.Result, response)
+	}
+
+	return fmt.Errorf(resp.Status)
+}
+
+func (c *Client) sendRequestWithFiles(method string, request url.Values, response interface{}, files ...inputFile) error {
+	var err error
+	var req *http.Request
+	var resp *http.Response
+	endPoint := fmt.Sprintf(c.url, method)
+
+	r, w := io.Pipe()
+
+	done := make(chan struct{})
+
+	mw := multipart.NewWriter(w)
+	netClient := &http.Client{
+		Timeout:   120 * time.Second,
+		Transport: netTransport,
+	}
+	go func() {
+		defer close(done)
+		req, err = http.NewRequest(http.MethodPost, endPoint, r)
+		if err != nil {
+			c.logger.Error(err)
+			return
+		}
+		req.Header.Set("Content-Type", mw.FormDataContentType())
+		resp, err = netClient.Do(req)
+	}()
+
+	for k := range request {
+		_ = mw.WriteField(k, request.Get(k))
+	}
+
+	for _, file := range files {
+		f, err := os.Open(file.name)
+		if err != nil {
+			return err
+		}
+		fileWriter, err := mw.CreateFormFile(file.field, file.name)
+		if err != nil {
+			return err
+		}
+
+		_, _ = io.Copy(fileWriter, f)
+		_ = f.Close()
+	}
+
+	_ = mw.Close()
+	_ = w.Close()
+
+	<-done // post request is done
 	if err != nil {
 		return err
 	}

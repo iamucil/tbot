@@ -15,6 +15,7 @@ type Client struct {
 	timeout      int
 	bufferSize   int
 	nextOffset   int
+	logger       Logger
 }
 
 type sendOption func(url.Values)
@@ -31,11 +32,14 @@ var (
 	OptSendingWithoutReply = func(r url.Values) { r.Set("allow_sending_without_reply", "true") }
 )
 
-func NewClient(token string) *Client {
+func NewClient(token string, baseURL string) *Client {
+	if baseURL == "" {
+		baseURL = apiBaseURL
+	}
 	return &Client{
 		token:   token,
-		baseURL: apiBaseURL,
-		url:     fmt.Sprintf("%s/bot%s", apiBaseURL, token) + "%s",
+		baseURL: baseURL,
+		url:     fmt.Sprintf("%s/bot%s", baseURL, token) + "%s",
 	}
 }
 
@@ -157,6 +161,8 @@ func (c *Client) SendMessage(chatID string, text string, opts ...sendOption) (*M
 	return msg, err
 }
 
+// ForwardMessage forwards message from one chat to another. Available options:
+// 	- OptDisableNotification
 func (c *Client) ForwardMessage(chatID, fromChatID string, messageID int, opts ...sendOption) (*Message, error) {
 	req := url.Values{}
 	req.Set("chat_id", chatID)
@@ -166,6 +172,52 @@ func (c *Client) ForwardMessage(chatID, fromChatID string, messageID int, opts .
 		opt(req)
 	}
 	msg := &Message{}
-	err := c.sendRequest("/forwardMessage", req, msg)
+	err := c.sendRequestWithFiles("/forwardMessage", req, msg)
+	return msg, err
+}
+
+type inputFile struct {
+	field string
+	name  string
+}
+
+// SendStickerFile send .webp file sticker. Available options:
+// 	- OptDisableNotification
+// 	- OptReplyToMessageID(id int)
+// 	- OptInlineKeyboardMarkup(markup *InlineKeyboardMarkup)
+// 	- OptReplyKeyboardMarkup(markup *ReplyKeyboardMarkup)
+// 	- OptReplyKeyboardRemove
+// 	- OptReplyKeyboardRemoveSelective
+// 	- OptForceReply
+// 	- OptForceReplySelective
+func (c *Client) SendStickerFile(chatID string, filename string, opts ...sendOption) (*Message, error) {
+	req := url.Values{}
+	req.Set("chat_id", chatID)
+	for _, opt := range opts {
+		opt(req)
+	}
+	msg := &Message{}
+	err := c.sendRequestWithFiles("/sendSticker", req, msg, inputFile{field: "sticker", name: filename})
+	return msg, err
+}
+
+// SendSticker send previously uploaded sticker. Available options:
+// 	- OptDisableNotification
+// 	- OptReplyToMessageID(id int)
+// 	- OptInlineKeyboardMarkup(markup *InlineKeyboardMarkup)
+// 	- OptReplyKeyboardMarkup(markup *ReplyKeyboardMarkup)
+// 	- OptReplyKeyboardRemove
+// 	- OptReplyKeyboardRemoveSelective
+// 	- OptForceReply
+// 	- OptForceReplySelective
+func (c *Client) SendSticker(chatID, fileID string, opts ...sendOption) (*Message, error) {
+	req := url.Values{}
+	req.Set("chat_id", chatID)
+	req.Set("sticker", fileID)
+	for _, opt := range opts {
+		opt(req)
+	}
+	msg := &Message{}
+	err := c.sendRequest("/sendSticker", req, msg)
 	return msg, err
 }
