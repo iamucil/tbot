@@ -31,14 +31,11 @@ var (
 	OptSendingWithoutReply = func(r url.Values) { r.Set("allow_sending_without_reply", "true") }
 )
 
-func NewClient(token string, baseUrl string) *Client {
-	if baseUrl == "" {
-		baseUrl = apiBaseURL
-	}
+func NewClient(token string) *Client {
 	return &Client{
 		token:   token,
-		baseURL: baseUrl,
-		url:     fmt.Sprintf("%s/bot%s", baseUrl, token) + "%s",
+		baseURL: apiBaseURL,
+		url:     fmt.Sprintf("%s/bot%s", apiBaseURL, token) + "%s",
 	}
 }
 
