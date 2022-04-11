@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"mime/multipart"
 	"net/http"
 	"net/url"
@@ -76,13 +77,16 @@ func (c *Client) sendRequest(method string, request url.Values, response interfa
 		}
 
 		if !apiResp.OK {
-			return fmt.Errorf(apiResp.Description)
+			return fmt.Errorf("%d : %s", apiResp.ErrorCode, apiResp.Description)
 		}
 
 		return json.Unmarshal(apiResp.Result, response)
 	}
-
-	return fmt.Errorf(resp.Status)
+	b, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+	return fmt.Errorf("%s : %s", resp.Status, string(b))
 }
 
 func (c *Client) sendRequestWithFiles(method string, request url.Values, response interface{}, files ...inputFile) error {

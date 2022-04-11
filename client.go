@@ -221,3 +221,27 @@ func (c *Client) SendSticker(chatID, fileID string, opts ...sendOption) (*Messag
 	err := c.sendRequest("/sendSticker", req, msg)
 	return msg, err
 }
+
+type chatAction string
+
+// Actions for SendChatAction
+const (
+	ActionTyping          chatAction = "typing"
+	ActionUploadPhoto     chatAction = "upload_photo"
+	ActionRecordVideo     chatAction = "record_video"
+	ActionUploadVideo     chatAction = "upload_video"
+	ActionRecordAudio     chatAction = "record_audio"
+	ActionUploadAudio     chatAction = "upload_audio"
+	ActionUploadDocument  chatAction = "upload_document"
+	ActionFindLocation    chatAction = "find_location"
+	ActionRecordVideoNote chatAction = "record_video_note"
+	ActionUploadVideoNote chatAction = "upload_video_note"
+)
+
+func (c *Client) SendChatAction(chatID string, action chatAction) error {
+	req := url.Values{}
+	req.Set("chat_id", chatID)
+	req.Set("action", string(action))
+	var sent bool
+	return c.sendRequest("sendChatAction", req, &sent)
+}
