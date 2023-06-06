@@ -44,7 +44,7 @@ func NewClient(token string, baseURL string) *Client {
 	}
 }
 
-func structString(s interface{}) string {
+func structString(s any) string {
 	str, _ := json.Marshal(s)
 	return string(str)
 }

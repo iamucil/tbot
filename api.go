@@ -33,7 +33,7 @@ var netTransport = &http.Transport{
 	ExpectContinueTimeout: 1 * time.Second,
 }
 
-func (c *Client) sendRequest(method string, request url.Values, response interface{}) error {
+func (c *Client) sendRequest(method string, request url.Values, response any) error {
 	var err error
 	var req *http.Request
 	var resp *http.Response
@@ -89,7 +89,7 @@ func (c *Client) sendRequest(method string, request url.Values, response interfa
 	return fmt.Errorf("%s : %s", resp.Status, string(b))
 }
 
-func (c *Client) sendRequestWithFiles(method string, request url.Values, response interface{}, files ...inputFile) error {
+func (c *Client) sendRequestWithFiles(method string, request url.Values, response any, files ...inputFile) error {
 	var err error
 	var req *http.Request
 	var resp *http.Response
