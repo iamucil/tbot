@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"strconv"
+	"strings"
 )
 
 type Client struct {
@@ -137,21 +138,25 @@ var (
 )
 
 // SendMessage sends message to telegram chat. Available options
-// 	- OptParseModeHTML
-// 	- OptParseModeMarkdown
-// 	- OptDisableWebPagePreview
-// 	- OptDisableNotification
-// 	- OptReplyToMessageID(id int)
-//  - OptSendingWithoutReply
-// 	- OptInlineKeyboardMarkup(markup *InlineKeyboardMarkup)
-// 	- OptReplyKeyboardMarkup(markup *ReplyKeyboardMarkup)
-// 	- OptReplyKeyboardRemove
-// 	- OptReplyKeyboardRemoveSelective
-// 	- OptForceReply
-// 	- OptForceReplySelective
-func (c *Client) SendMessage(chatID string, text string, opts ...sendOption) (*Message, error) {
+//   - OptParseModeHTML
+//   - OptParseModeMarkdown
+//   - OptDisableWebPagePreview
+//   - OptDisableNotification
+//   - OptReplyToMessageID(id int)
+//   - OptSendingWithoutReply
+//   - OptInlineKeyboardMarkup(markup *InlineKeyboardMarkup)
+//   - OptReplyKeyboardMarkup(markup *ReplyKeyboardMarkup)
+//   - OptReplyKeyboardRemove
+//   - OptReplyKeyboardRemoveSelective
+//   - OptForceReply
+//   - OptForceReplySelective
+func (c *Client) SendMessage(chatID string, thread_id string, text string, opts ...sendOption) (*Message, error) {
 	req := url.Values{}
 	req.Set("chat_id", chatID)
+	thread_id = strings.TrimSpace(thread_id)
+	if thread_id != "" {
+		req.Set("message_thread_id", thread_id)
+	}
 	req.Set("text", text)
 	for _, opt := range opts {
 		opt(req)
@@ -162,7 +167,7 @@ func (c *Client) SendMessage(chatID string, text string, opts ...sendOption) (*M
 }
 
 // ForwardMessage forwards message from one chat to another. Available options:
-// 	- OptDisableNotification
+//   - OptDisableNotification
 func (c *Client) ForwardMessage(chatID, fromChatID string, messageID int, opts ...sendOption) (*Message, error) {
 	req := url.Values{}
 	req.Set("chat_id", chatID)
@@ -182,14 +187,14 @@ type inputFile struct {
 }
 
 // SendStickerFile send .webp file sticker. Available options:
-// 	- OptDisableNotification
-// 	- OptReplyToMessageID(id int)
-// 	- OptInlineKeyboardMarkup(markup *InlineKeyboardMarkup)
-// 	- OptReplyKeyboardMarkup(markup *ReplyKeyboardMarkup)
-// 	- OptReplyKeyboardRemove
-// 	- OptReplyKeyboardRemoveSelective
-// 	- OptForceReply
-// 	- OptForceReplySelective
+//   - OptDisableNotification
+//   - OptReplyToMessageID(id int)
+//   - OptInlineKeyboardMarkup(markup *InlineKeyboardMarkup)
+//   - OptReplyKeyboardMarkup(markup *ReplyKeyboardMarkup)
+//   - OptReplyKeyboardRemove
+//   - OptReplyKeyboardRemoveSelective
+//   - OptForceReply
+//   - OptForceReplySelective
 func (c *Client) SendStickerFile(chatID string, filename string, opts ...sendOption) (*Message, error) {
 	req := url.Values{}
 	req.Set("chat_id", chatID)
@@ -202,14 +207,14 @@ func (c *Client) SendStickerFile(chatID string, filename string, opts ...sendOpt
 }
 
 // SendSticker send previously uploaded sticker. Available options:
-// 	- OptDisableNotification
-// 	- OptReplyToMessageID(id int)
-// 	- OptInlineKeyboardMarkup(markup *InlineKeyboardMarkup)
-// 	- OptReplyKeyboardMarkup(markup *ReplyKeyboardMarkup)
-// 	- OptReplyKeyboardRemove
-// 	- OptReplyKeyboardRemoveSelective
-// 	- OptForceReply
-// 	- OptForceReplySelective
+//   - OptDisableNotification
+//   - OptReplyToMessageID(id int)
+//   - OptInlineKeyboardMarkup(markup *InlineKeyboardMarkup)
+//   - OptReplyKeyboardMarkup(markup *ReplyKeyboardMarkup)
+//   - OptReplyKeyboardRemove
+//   - OptReplyKeyboardRemoveSelective
+//   - OptForceReply
+//   - OptForceReplySelective
 func (c *Client) SendSticker(chatID, fileID string, opts ...sendOption) (*Message, error) {
 	req := url.Values{}
 	req.Set("chat_id", chatID)
